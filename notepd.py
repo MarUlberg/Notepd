@@ -314,28 +314,28 @@ class Notepad:
         self.find_bar.grid_columnconfigure(5, minsize=180)
 
         self.find_entry = tk.Entry(self.find_bar, bg=DARK_BG, fg=LIGHT_TEXT, insertbackground=LIGHT_TEXT)
-        self.find_entry.grid(row=0, column=0, padx=5, pady=(2, 0), sticky="ew")
+        self.find_entry.grid(row=0, column=0, padx=5, pady=(0, 0), sticky="ew")
 
         find_btn = tk.Button(self.find_bar, text="Find Next", command=self.do_find,
                              bg=BUTTON_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
                              relief="flat", width=12, padx=4, pady=0)
-        find_btn.grid(row=0, column=1, padx=5, pady=(2, 1), sticky="ew")
+        find_btn.grid(row=0, column=1, padx=(3, 8), pady=(0, 2), sticky="ew")
 
         tk.Radiobutton(self.find_bar, text="Up", variable=self.search_direction, value="up",
-                       bg=ACCENT_COLOR, fg=LIGHT_TEXT, selectcolor=ACCENT_COLOR).grid(row=1, column=1, sticky="w", padx=5)
+                       bg=ACCENT_COLOR, fg=LIGHT_TEXT, selectcolor=ACCENT_COLOR).grid(row=1, column=1, sticky="w", padx=0)
         tk.Radiobutton(self.find_bar, text="Down", variable=self.search_direction, value="down",
-                       bg=ACCENT_COLOR, fg=LIGHT_TEXT, selectcolor=ACCENT_COLOR).grid(row=1, column=1, sticky="e", padx=5)
+                       bg=ACCENT_COLOR, fg=LIGHT_TEXT, selectcolor=ACCENT_COLOR).grid(row=1, column=1, sticky="e", padx=(3, 8))
 
         self.replace_entry = tk.Entry(self.find_bar, bg=DARK_BG, fg=LIGHT_TEXT, insertbackground=LIGHT_TEXT)
-        self.replace_entry.grid(row=0, column=3, padx=5, pady=(2, 0), sticky="ew")
+        self.replace_entry.grid(row=0, column=3, padx=5, pady=(0, 0), sticky="ew")
 
         tk.Button(self.find_bar, text="Replace", command=self.do_replace,
                   bg=BUTTON_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
-                  relief="flat", width=12, padx=4, pady=0).grid(row=0, column=4, padx=5, pady=(2, 1), sticky="ew")
+                  relief="flat", width=12, padx=4, pady=0).grid(row=0, column=4, padx=(3, 8), pady=(0, 2), sticky="ew")
 
         tk.Button(self.find_bar, text="Replace All", command=self.do_replace_all,
                   bg=BUTTON_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
-                  relief="flat", width=12, padx=4, pady=0).grid(row=1, column=4, padx=5, pady=(2, 2), sticky="ew")
+                  relief="flat", width=12, padx=4, pady=0).grid(row=1, column=4, padx=(3, 8), pady=(2, 0), sticky="ew")
 
         tk.Checkbutton(self.find_bar, text="Wrap around", variable=self.wrap_around,
                        bg=ACCENT_COLOR, fg=LIGHT_TEXT, selectcolor=ACCENT_COLOR).grid(row=1, column=0, sticky="w", padx=5)
