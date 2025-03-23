@@ -156,12 +156,13 @@ class Notepad:
         try:
             index = self.text_area.index("insert")
             line, col = map(int, index.split("."))
-
             count = self.text_area.count("1.0", "insert", "chars")
             pos = count[0] + 1 if count else 1
 
-            if self.status_label:
+            # Only update if the label still exists
+            if self.status_label and self.status_label.winfo_exists():
                 self.status_label.config(text=f"Ln : {line}   Col : {col+1}   Pos : {pos}")
+
         except Exception as e:
             print("Cursor update failed:", e)
 
@@ -378,9 +379,13 @@ class Notepad:
 
     def do_replace(self):
         if self.text_area.tag_ranges("found"):
-            self.text_area.delete("found.first", "found.last")
-            self.text_area.insert("found.first", self.replace_entry.get())
+            try:
+                self.text_area.delete("found.first", "found.last")
+                self.text_area.insert("found.first", self.replace_entry.get())
+            except tk.TclError:
+                pass  # handle rare case where tag was cleared
         self.do_find()
+
 
     def do_replace_all(self):
         query = self.find_entry.get()
@@ -399,9 +404,19 @@ class Notepad:
     def bind_shortcuts(self):
         self.text_area.bind("<Control-MouseWheel>", self.zoom_with_scroll)
         self.root.bind("<Control-f>", lambda e: self.toggle_find_bar())
-        self.root.bind("<Control-h>", lambda e: (self.toggle_find_bar(), "break"))
+
+        # Ctrl+H override on the text widget itself
+        def handle_ctrl_h(event):
+            self.toggle_find_bar()
+            return "break"
+
+        self.text_area.bind("<Control-h>", handle_ctrl_h)  # override text widget's backspace
+        self.root.bind("<Control-h>", handle_ctrl_h)       # catch it at root level too
+
         self.root.bind("<Control-o>", lambda e: (self.open_file(), "break"))
         self.root.bind("<Control-s>", lambda e: (self.save_file(), "break"))
+
+
 
 if __name__ == "__main__":
     root = tk.Tk()
