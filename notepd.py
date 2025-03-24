@@ -1,10 +1,10 @@
-# notepd_final_v10.py — visual tweaks, better dialog, border highlight
 import json
 import os
 import tkinter as tk
 from tkinter import filedialog, font
 from pathlib import Path
 
+### ================= Configuration & Constants ================== ###
 CONFIG_PATH = "config"
 
 ACCENT_COLOR = "#212121"
@@ -82,6 +82,7 @@ class Notepad:
         except Exception:
             pass
 
+    ### ====================== UI Construction ======================= ###
     def create_widgets(self):
         self.text_frame = tk.Frame(self.root, bg=DARK_BG)
         self.text_frame.grid(row=0, column=0, sticky="nsew")
@@ -115,6 +116,7 @@ class Notepad:
         self.text_area.bind("<KeyRelease>", lambda e: self.update_cursor_position())
         self.text_area.bind("<ButtonRelease>", lambda e: self.update_cursor_position())
 
+    ### ======================= Menu Creation ======================== ###
     def create_menu(self):
         menu_bar = tk.Menu(self.root)
 
@@ -149,6 +151,7 @@ class Notepad:
             self.scroll_x.grid()
         self.save_config()
 
+    ### ================== Cursor & Status Updates =================== ###
     def update_cursor_position(self):
         self.root.after_idle(self._update_cursor)
 
@@ -171,12 +174,14 @@ class Notepad:
         current = self.text_area.get("1.0", tk.END).strip()
         return current != self.last_saved_text.strip()
 
+    ### ====================== File Operations ======================= ###
     def new_file(self):
         if self.confirm_discard_changes():
             self.filename = None
             self.text_area.delete(1.0, tk.END)
             self.last_saved_text = ""
 
+    ### ====================== File Operations ======================= ###
     def open_file(self):
         if not self.confirm_discard_changes():
             return
@@ -189,6 +194,7 @@ class Notepad:
                 self.text_area.insert(tk.END, content)
                 self.last_saved_text = content
 
+    ### ====================== File Operations ======================= ###
     def save_file(self):
         if self.filename:
             content = self.text_area.get("1.0", tk.END)
@@ -198,6 +204,7 @@ class Notepad:
         else:
             self.save_file_as()
 
+    ### ====================== File Operations ======================= ###
     def save_file_as(self):
         path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt")])
         if path:
@@ -207,6 +214,7 @@ class Notepad:
                 file.write(content)
             self.last_saved_text = content
 
+    ### ======================= Exit Handling ======================== ###
     def confirm_discard_changes(self):
         if not self.is_modified():
             return True
@@ -282,6 +290,7 @@ class Notepad:
         return False
 
 
+    ### ======================= Exit Handling ======================== ###
     def exit_app(self):
         self.save_config()
         if self.confirm_discard_changes():
@@ -301,6 +310,7 @@ class Notepad:
         self.text_font.configure(size=self.font_size)
         self.save_config()
 
+    ### ===================== Find/Replace Logic ===================== ###
     def toggle_find_bar(self):
         if self.find_bar and self.find_bar.winfo_exists():
             self.find_bar.destroy()
@@ -331,11 +341,11 @@ class Notepad:
 
         tk.Button(self.find_bar, text="Replace", command=self.do_replace,
                   bg=BUTTON_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
-                  relief="flat", width=12, padx=4, pady=0).grid(row=0, column=4, padx=(3, 8), pady=(0, 2), sticky="ew")
+                  relief="flat", width=12, padx=4, pady=0).grid(row=0, column=4, padx=(3, 5), pady=(0, 2), sticky="ew")
 
         tk.Button(self.find_bar, text="Replace All", command=self.do_replace_all,
                   bg=BUTTON_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
-                  relief="flat", width=12, padx=4, pady=0).grid(row=1, column=4, padx=(3, 8), pady=(2, 0), sticky="ew")
+                  relief="flat", width=12, padx=4, pady=0).grid(row=1, column=4, padx=(3, 5), pady=(2, 0), sticky="ew")
 
         tk.Checkbutton(self.find_bar, text="Wrap around", variable=self.wrap_around,
                        bg=ACCENT_COLOR, fg=LIGHT_TEXT, selectcolor=ACCENT_COLOR).grid(row=1, column=0, sticky="w", padx=5)
@@ -346,6 +356,7 @@ class Notepad:
         self.status_label.grid(row=1, column=5, padx=10, sticky="e")
         self.update_cursor_position()
 
+    ### ===================== Find/Replace Logic ===================== ###
     def do_find(self):
         self.text_area.tag_remove("found", "1.0", tk.END)
         query = self.find_entry.get()
@@ -377,6 +388,7 @@ class Notepad:
                 self.text_area.mark_set("insert", idx if backwards else end)
                 self.text_area.see(idx)
 
+    ### ===================== Find/Replace Logic ===================== ###
     def do_replace(self):
         if self.text_area.tag_ranges("found"):
             try:
@@ -387,6 +399,7 @@ class Notepad:
         self.do_find()
 
 
+    ### ===================== Find/Replace Logic ===================== ###
     def do_replace_all(self):
         query = self.find_entry.get()
         replace = self.replace_entry.get()
@@ -401,6 +414,7 @@ class Notepad:
         self.text_area.delete("1.0", tk.END)
         self.text_area.insert("1.0", new_content)
 
+    ### ======================== Key Bindings ======================== ###
     def bind_shortcuts(self):
         self.text_area.bind("<Control-MouseWheel>", self.zoom_with_scroll)
         self.root.bind("<Control-f>", lambda e: self.toggle_find_bar())
@@ -418,6 +432,7 @@ class Notepad:
 
 
 
+### ================== Application Entry Point =================== ###
 if __name__ == "__main__":
     root = tk.Tk()
     app = Notepad(root)
