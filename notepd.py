@@ -1,17 +1,17 @@
 import json
 import os
 import tkinter as tk
-from tkinter import filedialog, font
+from tkinter import filedialog, font, ttk
 from pathlib import Path
 
 ### ================= Configuration & Constants ================== ###
 CONFIG_PATH = "config"
 
-ACCENT_COLOR = "#212121"
-LIGHT_TEXT = "#CCCCCC"
-DARK_BG = "#424242"
-BUTTON_BG = "#333333"
-BUTTON_ACTIVE = "#555555"
+LIGHTGRAY_BG = "#424242"
+MIDGRAY_BG = "#333333"
+DARKGRAY_BG = "#212121"
+LIGHT_TEXT = "#DEDEDE"
+BUTTON_ACTIVE = "#393939"
 
 FONTS = [
     "Arial", "Calibri", "Comic Sans", "Courier New", "Garamond",
@@ -27,7 +27,30 @@ class Notepad:
         self.load_config()
 
         self.root.geometry(self.window_size or "900x650")
-        self.root.configure(bg=DARK_BG)
+        self.root.configure(bg=DARKGRAY_BG, highlightbackground=DARKGRAY_BG, highlightcolor=DARKGRAY_BG, highlightthickness=2)
+
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure("Vertical.TScrollbar",
+                        background=DARKGRAY_BG,
+                        troughcolor=LIGHTGRAY_BG,
+                        bordercolor=LIGHTGRAY_BG,
+                        arrowcolor=LIGHTGRAY_BG,
+                        lightcolor=DARKGRAY_BG,
+                        darkcolor=DARKGRAY_BG,
+                        relief="flat")
+        style.configure("Horizontal.TScrollbar",
+                        background=DARKGRAY_BG,
+                        troughcolor=LIGHTGRAY_BG,
+                        bordercolor=LIGHTGRAY_BG,
+                        arrowcolor=LIGHTGRAY_BG,
+                        lightcolor=DARKGRAY_BG,
+                        darkcolor=DARKGRAY_BG,
+                        relief="flat")
+        style.map("Vertical.TScrollbar",
+                  background=[("disabled", DARKGRAY_BG)])
+        style.map("Horizontal.TScrollbar",
+                  background=[("disabled", DARKGRAY_BG)])
 
         self.text_font = font.Font(family=self.font_family, size=self.font_size)
         self.wrap_enabled = self.wrap_state
@@ -82,25 +105,25 @@ class Notepad:
         except Exception:
             pass
 
-    ### ====================== UI Construction ======================= ###
+### ====================== UI Construction ======================= ###
     def create_widgets(self):
-        self.text_frame = tk.Frame(self.root, bg=DARK_BG)
+        self.text_frame = tk.Frame(self.root, bg=LIGHTGRAY_BG)
         self.text_frame.grid(row=0, column=0, sticky="nsew")
 
         wrap_mode = "word" if self.wrap_enabled else "none"
 
         self.text_area = tk.Text(
             self.text_frame, wrap=wrap_mode, undo=True, font=self.text_font,
-            bg=DARK_BG, fg=LIGHT_TEXT, insertbackground=LIGHT_TEXT,
-            padx=10, pady=5
+            bg=LIGHTGRAY_BG, fg=LIGHT_TEXT, insertbackground=LIGHT_TEXT,
+            padx=10, pady=5, relief="flat"
         )
         self.text_area.grid(row=0, column=0, sticky="nsew")
 
-        self.scroll_y = tk.Scrollbar(self.text_frame, command=self.text_area.yview)
+        self.scroll_y = ttk.Scrollbar(self.text_frame, command=self.text_area.yview, style="Vertical.TScrollbar")
         self.scroll_y.grid(row=0, column=1, sticky="ns")
         self.text_area.configure(yscrollcommand=self.scroll_y.set)
 
-        self.scroll_x = tk.Scrollbar(self.text_frame, orient="horizontal", command=self.text_area.xview)
+        self.scroll_x = ttk.Scrollbar(self.text_frame, orient="horizontal", command=self.text_area.xview, style="Horizontal.TScrollbar")
         self.scroll_x.grid(row=1, column=0, sticky="ew")
         self.text_area.configure(xscrollcommand=self.scroll_x.set)
         self.scroll_x.grid_remove()
@@ -116,9 +139,9 @@ class Notepad:
         self.text_area.bind("<KeyRelease>", lambda e: self.update_cursor_position())
         self.text_area.bind("<ButtonRelease>", lambda e: self.update_cursor_position())
 
-    ### ======================= Menu Creation ======================== ###
+### ======================= Menu Creation ======================== ###
     def create_menu(self):
-        menu_bar = tk.Menu(self.root)
+        menu_bar = tk.Menu(self.root, bg=LIGHTGRAY_BG, fg=DARKGRAY_BG, activebackground=BUTTON_ACTIVE, activeforeground=LIGHT_TEXT, tearoff=0)
 
         file_menu = tk.Menu(menu_bar, tearoff=0)
         file_menu.add_command(label="New", command=self.new_file)
@@ -151,7 +174,7 @@ class Notepad:
             self.scroll_x.grid()
         self.save_config()
 
-    ### ================== Cursor & Status Updates =================== ###
+### ================== Cursor & Status Updates =================== ###
     def update_cursor_position(self):
         self.root.after_idle(self._update_cursor)
 
@@ -174,14 +197,14 @@ class Notepad:
         current = self.text_area.get("1.0", tk.END).strip()
         return current != self.last_saved_text.strip()
 
-    ### ====================== File Operations ======================= ###
+### ====================== File Operations ======================= ###
     def new_file(self):
         if self.confirm_discard_changes():
             self.filename = None
             self.text_area.delete(1.0, tk.END)
             self.last_saved_text = ""
 
-    ### ====================== File Operations ======================= ###
+### ====================== File Operations ======================= ###
     def open_file(self):
         if not self.confirm_discard_changes():
             return
@@ -194,7 +217,7 @@ class Notepad:
                 self.text_area.insert(tk.END, content)
                 self.last_saved_text = content
 
-    ### ====================== File Operations ======================= ###
+### ====================== File Operations ======================= ###
     def save_file(self):
         if self.filename:
             content = self.text_area.get("1.0", tk.END)
@@ -204,7 +227,7 @@ class Notepad:
         else:
             self.save_file_as()
 
-    ### ====================== File Operations ======================= ###
+### ====================== File Operations ======================= ###
     def save_file_as(self):
         path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt")])
         if path:
@@ -214,7 +237,7 @@ class Notepad:
                 file.write(content)
             self.last_saved_text = content
 
-    ### ======================= Exit Handling ======================== ###
+### ======================= Exit Handling ======================== ###
     def confirm_discard_changes(self):
         if not self.is_modified():
             return True
@@ -223,7 +246,7 @@ class Notepad:
 
         dialog = tk.Toplevel(self.root)
         dialog.title("Notepd")
-        dialog.configure(bg=ACCENT_COLOR)
+        dialog.configure(bg=DARKGRAY_BG)
         dialog.resizable(False, False)
         dialog.geometry("480x150")
 
@@ -252,12 +275,12 @@ class Notepad:
 
         # Main message
         tk.Label(dialog, text="Do you want to save changes to",
-                 bg=ACCENT_COLOR, fg=LIGHT_TEXT, font=("Segoe UI", 12)
+                 bg=DARKGRAY_BG, fg=LIGHT_TEXT, font=("Segoe UI", 12)
         ).pack(pady=(20, 0), padx=12, anchor="w")
 
         # Filename on separate line with wrapping
         tk.Label(dialog, text=file_display,
-                 bg=ACCENT_COLOR, fg=LIGHT_TEXT, font=("Segoe UI", 14, "bold"),
+                 bg=DARKGRAY_BG, fg=LIGHT_TEXT, font=("Segoe UI", 14, "bold"),
                  wraplength=440, justify="left", anchor="w"
         ).pack(padx=15, anchor="w")
 
@@ -266,13 +289,13 @@ class Notepad:
             result["action"] = action
             dialog.destroy()
 
-        btn_frame = tk.Frame(dialog, bg=ACCENT_COLOR)
+        btn_frame = tk.Frame(dialog, bg=DARKGRAY_BG)
         btn_frame.pack(side="bottom", fill="x", padx=10, pady=10)
 
-        tk.Frame(btn_frame, width=140, bg=ACCENT_COLOR).pack(side="left")  # spacer
+        tk.Frame(btn_frame, width=140, bg=DARKGRAY_BG).pack(side="left")  # spacer
         def styled_btn(txt, act):
             return tk.Button(btn_frame, text=txt, width=10, command=lambda: do(act),
-                             bg=DARK_BG, fg=LIGHT_TEXT, relief="flat", padx=10, pady=3)
+                             bg=LIGHTGRAY_BG, fg=LIGHT_TEXT, relief="flat", padx=10, pady=3)
 
         styled_btn("Save", "save").pack(side="left", padx=5)
         styled_btn("Don't Save", "discard").pack(side="left", padx=5)
@@ -290,7 +313,7 @@ class Notepad:
         return False
 
 
-    ### ======================= Exit Handling ======================== ###
+### ======================= Exit Handling ======================== ###
     def exit_app(self):
         self.save_config()
         if self.confirm_discard_changes():
@@ -310,53 +333,54 @@ class Notepad:
         self.text_font.configure(size=self.font_size)
         self.save_config()
 
-    ### ===================== Find/Replace Logic ===================== ###
+### ===================== Find/Replace Logic ===================== ###
+        
     def toggle_find_bar(self):
         if self.find_bar and self.find_bar.winfo_exists():
             self.find_bar.destroy()
             return
 
-        self.find_bar = tk.Frame(self.root, bg=ACCENT_COLOR, bd=2, highlightbackground=ACCENT_COLOR, highlightthickness=2)
+        self.find_bar = tk.Frame(self.root, bg=DARKGRAY_BG, bd=2)
         self.find_bar.grid(row=1, column=0, columnspan=2, sticky="ew")
 
-        for i in range(6):
-            self.find_bar.grid_columnconfigure(i, weight=1 if i in [0, 3] else 0)
-        self.find_bar.grid_columnconfigure(5, minsize=180)
+        for i in range(5):
+            self.find_bar.grid_columnconfigure(i, weight=1 if i in [0, 2] else 0)
+        self.find_bar.grid_columnconfigure(4, minsize=180)
 
-        self.find_entry = tk.Entry(self.find_bar, bg=DARK_BG, fg=LIGHT_TEXT, insertbackground=LIGHT_TEXT)
+        self.find_entry = tk.Entry(self.find_bar, bg=LIGHTGRAY_BG, fg=LIGHT_TEXT, insertbackground=LIGHT_TEXT)
         self.find_entry.grid(row=0, column=0, padx=5, pady=(0, 0), sticky="ew")
 
         find_btn = tk.Button(self.find_bar, text="Find Next", command=self.do_find,
-                             bg=BUTTON_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
+                             bg=MIDGRAY_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
                              relief="flat", width=12, padx=4, pady=0)
-        find_btn.grid(row=0, column=1, padx=(3, 8), pady=(0, 2), sticky="ew")
+        find_btn.grid(row=0, column=1, padx=(3, 8), pady=(2, 2), sticky="ew")
 
         tk.Radiobutton(self.find_bar, text="Up", variable=self.search_direction, value="up",
-                       bg=ACCENT_COLOR, fg=LIGHT_TEXT, selectcolor=ACCENT_COLOR).grid(row=1, column=1, sticky="w", padx=0)
+                       bg=DARKGRAY_BG, fg=LIGHT_TEXT, selectcolor=DARKGRAY_BG, activebackground=MIDGRAY_BG).grid(row=1, column=1, sticky="w", padx=0)
         tk.Radiobutton(self.find_bar, text="Down", variable=self.search_direction, value="down",
-                       bg=ACCENT_COLOR, fg=LIGHT_TEXT, selectcolor=ACCENT_COLOR).grid(row=1, column=1, sticky="e", padx=(3, 8))
+                       bg=DARKGRAY_BG, fg=LIGHT_TEXT, selectcolor=DARKGRAY_BG, activebackground=MIDGRAY_BG).grid(row=1, column=1, sticky="e", padx=(3, 5))
 
-        self.replace_entry = tk.Entry(self.find_bar, bg=DARK_BG, fg=LIGHT_TEXT, insertbackground=LIGHT_TEXT)
-        self.replace_entry.grid(row=0, column=3, padx=5, pady=(0, 0), sticky="ew")
+        self.replace_entry = tk.Entry(self.find_bar, bg=LIGHTGRAY_BG, fg=LIGHT_TEXT, insertbackground=LIGHT_TEXT)
+        self.replace_entry.grid(row=0, column=2, padx=5, pady=(0, 0), sticky="ew")
 
         tk.Button(self.find_bar, text="Replace", command=self.do_replace,
-                  bg=BUTTON_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
-                  relief="flat", width=12, padx=4, pady=0).grid(row=0, column=4, padx=(3, 5), pady=(0, 2), sticky="ew")
+                  bg=MIDGRAY_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
+                  relief="flat", width=12, padx=4, pady=0).grid(row=0, column=3, padx=(3, 8), pady=(2, 2), sticky="ew")
 
         tk.Button(self.find_bar, text="Replace All", command=self.do_replace_all,
-                  bg=BUTTON_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
-                  relief="flat", width=12, padx=4, pady=0).grid(row=1, column=4, padx=(3, 5), pady=(2, 0), sticky="ew")
+                  bg=MIDGRAY_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
+                  relief="flat", width=12, padx=4, pady=0).grid(row=1, column=3, padx=(3, 8), pady=(2, 0), sticky="ew")
 
         tk.Checkbutton(self.find_bar, text="Wrap around", variable=self.wrap_around,
-                       bg=ACCENT_COLOR, fg=LIGHT_TEXT, selectcolor=ACCENT_COLOR).grid(row=1, column=0, sticky="w", padx=5)
+                       bg=DARKGRAY_BG, fg=LIGHT_TEXT, selectcolor=DARKGRAY_BG, activebackground=MIDGRAY_BG).grid(row=1, column=0, sticky="w", padx=5)
         tk.Checkbutton(self.find_bar, text="Match case", variable=self.match_case,
-                       bg=ACCENT_COLOR, fg=LIGHT_TEXT, selectcolor=ACCENT_COLOR).grid(row=1, column=0, sticky="w", padx=(120, 5))
+                       bg=DARKGRAY_BG, fg=LIGHT_TEXT, selectcolor=DARKGRAY_BG, activebackground=MIDGRAY_BG).grid(row=1, column=0, sticky="w", padx=(120, 5))
 
-        self.status_label = tk.Label(self.find_bar, text="", fg=LIGHT_TEXT, bg=ACCENT_COLOR, anchor="e")
-        self.status_label.grid(row=1, column=5, padx=10, sticky="e")
+        self.status_label = tk.Label(self.find_bar, text="", fg=LIGHT_TEXT, bg=DARKGRAY_BG, anchor="e")
+        self.status_label.grid(row=1, column=4, padx=10, sticky="e")
         self.update_cursor_position()
 
-    ### ===================== Find/Replace Logic ===================== ###
+### ===================== Find/Replace Logic ===================== ###
     def do_find(self):
         self.text_area.tag_remove("found", "1.0", tk.END)
         query = self.find_entry.get()
@@ -374,7 +398,7 @@ class Notepad:
         if idx:
             end = f"{idx}+{len(query)}c"
             self.text_area.tag_add("found", idx, end)
-            self.text_area.tag_config("found", background=ACCENT_COLOR)
+            self.text_area.tag_config("found", background=DARKGRAY_BG)
             self.text_area.mark_set("insert", idx if backwards else end)
             self.text_area.see(idx)
         elif self.wrap_around.get():
@@ -384,22 +408,23 @@ class Notepad:
             if idx:
                 end = f"{idx}+{len(query)}c"
                 self.text_area.tag_add("found", idx, end)
-                self.text_area.tag_config("found", background=ACCENT_COLOR)
+                self.text_area.tag_config("found", background=DARKGRAY_BG)
                 self.text_area.mark_set("insert", idx if backwards else end)
                 self.text_area.see(idx)
 
-    ### ===================== Find/Replace Logic ===================== ###
+### ===================== Find/Replace Logic ===================== ###
     def do_replace(self):
         if self.text_area.tag_ranges("found"):
             try:
+                replace_pos = self.text_area.index("found.first")
                 self.text_area.delete("found.first", "found.last")
-                self.text_area.insert("found.first", self.replace_entry.get())
+                self.text_area.insert(replace_pos, self.replace_entry.get())
             except tk.TclError:
-                pass  # handle rare case where tag was cleared
+                pass
         self.do_find()
 
 
-    ### ===================== Find/Replace Logic ===================== ###
+### ===================== Find/Replace Logic ===================== ###
     def do_replace_all(self):
         query = self.find_entry.get()
         replace = self.replace_entry.get()
@@ -414,7 +439,7 @@ class Notepad:
         self.text_area.delete("1.0", tk.END)
         self.text_area.insert("1.0", new_content)
 
-    ### ======================== Key Bindings ======================== ###
+### ======================== Key Bindings ======================== ###
     def bind_shortcuts(self):
         self.text_area.bind("<Control-MouseWheel>", self.zoom_with_scroll)
         self.root.bind("<Control-f>", lambda e: self.toggle_find_bar())
