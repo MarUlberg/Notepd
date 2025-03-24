@@ -1,11 +1,18 @@
 import json
 import os
+from tkinterdnd2 import DND_FILES, TkinterDnD
 import tkinter as tk
 from tkinter import filedialog, font, ttk
 from pathlib import Path
 
+
 ### ================= Configuration & Constants ================== ###
-CONFIG_PATH = "config"
+
+APP_NAME = "Notepd"
+CONFIG_DIR = os.path.join(os.environ.get("APPDATA", os.path.expanduser("~")), APP_NAME)
+os.makedirs(CONFIG_DIR, exist_ok=True)
+CONFIG_PATH = os.path.join(CONFIG_DIR, "config.json")
+
 
 LIGHTGRAY_BG = "#424242"
 MIDGRAY_BG = "#333333"
@@ -63,14 +70,28 @@ class Notepad:
         self.search_direction = tk.StringVar(value="down")
 
         self.create_widgets()
-        self.create_menu()
-        self.bind_shortcuts()
+        self.text_area.drop_target_register(DND_FILES)
+        self.text_area.dnd_bind('<<Drop>>', self.handle_drop)
+
+        self.root.after(200, self.create_menu)
+        self.root.after(200, self.bind_shortcuts)
 
         if self.find_bar_visible:
             self.toggle_find_bar()
 
         self.update_cursor_position()
         self.root.protocol("WM_DELETE_WINDOW", self.exit_app)
+
+    def handle_drop(self, event):
+        path = event.data.strip('{}')
+        if os.path.isfile(path):
+            if self.confirm_discard_changes():
+                self.filename = path
+                with open(path, "r", encoding="utf-8") as file:
+                    content = file.read()
+                    self.text_area.delete("1.0", tk.END)
+                    self.text_area.insert(tk.END, content)
+                    self.last_saved_text = content
 
     def load_config(self):
         self.font_family = "Consolas"
@@ -89,6 +110,20 @@ class Notepad:
                     self.find_bar_state = data.get("find_bar_visible", False)
                     self.wrap_state = data.get("wrap_enabled", True)
             except Exception:
+                pass
+
+    def save_config(self):
+        data = {
+            "font_family": self.font_family,
+            "font_size": self.font_size,
+            "window_size": self.root.geometry(),
+            "find_bar_visible": bool(self.find_bar and self.find_bar.winfo_exists()),
+            "wrap_enabled": self.wrap_enabled
+        }
+        try:
+            with open(CONFIG_PATH, "w") as f:
+                json.dump(data, f)
+        except Exception:
                 pass
 
     def save_config(self):
@@ -148,6 +183,8 @@ class Notepad:
         file_menu.add_command(label="Open...", command=self.open_file)
         file_menu.add_command(label="Save", command=self.save_file)
         file_menu.add_command(label="Save As...", command=self.save_file_as)
+        file_menu.add_separator()
+        file_menu.add_command(label="Print...", command=self.print_file)
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.exit_app)
         menu_bar.add_cascade(label="File", menu=file_menu)
@@ -363,6 +400,12 @@ class Notepad:
         self.replace_entry = tk.Entry(self.find_bar, bg=LIGHTGRAY_BG, fg=LIGHT_TEXT, insertbackground=LIGHT_TEXT)
         self.replace_entry.grid(row=0, column=2, padx=5, pady=(0, 0), sticky="ew")
 
+        self.find_entry.bind("<Return>", lambda e: self.do_find())
+        self.find_entry.bind("<Shift-Return>", lambda e: self.toggle_search_direction_and_find())
+        self.replace_entry.bind("<Return>", lambda e: self.do_replace())
+        self.replace_entry.bind("<Shift-Return>", lambda e: self.toggle_search_direction_and_find())
+
+
         tk.Button(self.find_bar, text="Replace", command=self.do_replace,
                   bg=MIDGRAY_BG, fg=LIGHT_TEXT, activebackground=BUTTON_ACTIVE,
                   relief="flat", width=12, padx=4, pady=0).grid(row=0, column=3, padx=(3, 8), pady=(2, 2), sticky="ew")
@@ -439,6 +482,46 @@ class Notepad:
         self.text_area.delete("1.0", tk.END)
         self.text_area.insert("1.0", new_content)
 
+
+    def insert_datetime(self):
+        from datetime import datetime
+        self.text_area.insert("insert", datetime.now().strftime("%H:%M %d/%m/%Y"))
+
+    def print_file(self):
+        try:
+            import win32print
+            import win32ui
+            from tempfile import NamedTemporaryFile
+            win32api = __import__('win32api')
+
+            text = self.text_area.get("1.0", "end-1c")
+            if not text.strip():
+                return
+            with NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8") as tmp:
+                tmp.write(text)
+                tmp_path = tmp.name
+            win32api.ShellExecute(0, "print", tmp_path, None, ".", 0)
+        except Exception as e:
+            print("Print error:", e)
+
+    def search_google(self):
+        try:
+            from urllib.parse import quote
+            import webbrowser
+            selected = self.text_area.selection_get()
+            if selected.strip():
+                webbrowser.open(f"https://www.google.com/search?q={quote(selected)}")
+        except tk.TclError:
+            pass
+
+
+
+    def toggle_search_direction_and_find(self):
+        current = self.search_direction.get()
+        self.search_direction.set("up" if current == "down" else "down")
+        self.do_find()
+
+
 ### ======================== Key Bindings ======================== ###
     def bind_shortcuts(self):
         self.text_area.bind("<Control-MouseWheel>", self.zoom_with_scroll)
@@ -454,11 +537,18 @@ class Notepad:
 
         self.root.bind("<Control-o>", lambda e: (self.open_file(), "break"))
         self.root.bind("<Control-s>", lambda e: (self.save_file(), "break"))
+        self.root.bind("<F5>", lambda e: self.insert_datetime())
+        self.root.bind("<Control-p>", lambda e: self.print_file())
+        self.root.bind("<Control-e>", lambda e: self.search_google())
 
 
 
 ### ================== Application Entry Point =================== ###
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = TkinterDnD.Tk()
+    try:
+        root.tk.eval('package require tkdnd')
+    except tk.TclError as e:
+        print("Failed to load tkdnd package:", e)
     app = Notepad(root)
     root.mainloop()

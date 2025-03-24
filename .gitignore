@@ -1,5 +1,4 @@
-config
-config
 Notepd.png
 BuildEXE.bat
-config
+new/notepd.py
+*.exe
