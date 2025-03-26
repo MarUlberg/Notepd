@@ -1,0 +1,5 @@
+This software includes the tkinterdnd2 library by Georgiy Oreshkin,
+available at: https://github.com/pmgagne/tkinterdnd2
+
+tkinterdnd2 is licensed under the MIT License.
+See the LICENSE file for details.
