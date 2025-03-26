@@ -1,4 +1,5 @@
 Notepd.png
-BuildEXE.bat
-new/notepd.py
+*.bat
 *.exe
+install_tkdnd.ps1
+tkdnd-2.9.5-windows-tcl8.6-x64.zip
