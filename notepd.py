@@ -1,3 +1,18 @@
+
+import socket
+import threading
+
+PORT = 56789
+SINGLETON_HOST = '127.0.0.1'
+
+def notify_existing_instance():
+    try:
+        with socket.create_connection((SINGLETON_HOST, PORT), timeout=1) as s:
+            s.sendall(b"SHOW")
+        return True
+    except Exception:
+        return False
+
 import json
 import os
 from tkinterdnd2 import DND_FILES, TkinterDnD
@@ -80,7 +95,7 @@ class Notepad:
             self.toggle_find_bar()
 
         self.update_cursor_position()
-        self.root.protocol("WM_DELETE_WINDOW", self.exit_app)
+        self.root.protocol("WM_DELETE_WINDOW", self.hide_and_reset)
 
     def handle_drop(self, event):
         path = event.data.strip('{}')
@@ -351,6 +366,14 @@ class Notepad:
 
 
 ### ======================= Exit Handling ======================== ###
+
+    def hide_and_reset(self):
+        if self.confirm_discard_changes():
+            self.filename = None
+            self.text_area.delete("1.0", tk.END)
+            self.last_saved_text = ""
+            self.root.withdraw()
+
     def exit_app(self):
         self.save_config()
         if self.confirm_discard_changes():
@@ -523,6 +546,21 @@ class Notepad:
 
 
 ### ======================== Key Bindings ======================== ###
+
+    def singleton_server(self):
+        def listen():
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind((SINGLETON_HOST, PORT))
+                s.listen(1)
+                while True:
+                    conn, _ = s.accept()
+                    with conn:
+                        msg = conn.recv(1024).decode()
+                        if msg == "SHOW":
+                            self.root.after(0, lambda: self.root.deiconify())
+        threading.Thread(target=listen, daemon=True).start()
+
     def bind_shortcuts(self):
         self.text_area.bind("<Control-MouseWheel>", self.zoom_with_scroll)
         self.root.bind("<Control-f>", lambda e: self.toggle_find_bar())
@@ -544,11 +582,17 @@ class Notepad:
 
 
 ### ================== Application Entry Point =================== ###
+
 if __name__ == "__main__":
+    if notify_existing_instance():
+        sys.exit()
+
     root = TkinterDnD.Tk()
     try:
         root.tk.eval('package require tkdnd')
     except tk.TclError as e:
         print("Failed to load tkdnd package:", e)
     app = Notepad(root)
+    app.singleton_server()
     root.mainloop()
+
