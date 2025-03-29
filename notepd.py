@@ -397,7 +397,6 @@ class Notepad:
         
     def toggle_find_bar(self):
         if self.find_bar and self.find_bar.winfo_exists():
-            self.find_bar.destroy()
             return
 
         self.find_bar = tk.Frame(self.root, bg=DARKGRAY_BG, bd=2)
@@ -444,6 +443,9 @@ class Notepad:
 
         self.status_label = tk.Label(self.find_bar, text="", fg=LIGHT_TEXT, bg=DARKGRAY_BG, anchor="e")
         self.status_label.grid(row=1, column=4, padx=10, sticky="e")
+        tk.Button(self.find_bar, text="✕", command=self.find_bar.destroy,
+          bg=DARKGRAY_BG, fg="#606060", relief="flat", padx=6, pady=2,
+          activebackground=BUTTON_ACTIVE).grid(row=0, column=4, sticky="ne", padx=0, pady=0)
         self.update_cursor_position()
 
 ### ===================== Find/Replace Logic ===================== ###
@@ -563,12 +565,38 @@ class Notepad:
 
     def bind_shortcuts(self):
         self.text_area.bind("<Control-MouseWheel>", self.zoom_with_scroll)
-        self.root.bind("<Control-f>", lambda e: self.toggle_find_bar())
+        def handle_ctrl_f(event):
+            try:
+                selection = self.text_area.selection_get()
+                if selection.strip():
+                    self.toggle_find_bar()
+                    self.find_entry.delete(0, tk.END)
+                    self.find_entry.insert(0, selection)
+                    return "break"
+            except tk.TclError:
+                pass
+            self.toggle_find_bar()
+            return "break"
+
+        self.root.bind("<Control-f>", handle_ctrl_f)
 
         # Ctrl+H override on the text widget itself
         def handle_ctrl_h(event):
+            try:
+                selection = self.text_area.selection_get()
+                if selection.strip():
+                    self.toggle_find_bar()
+                    self.find_entry.delete(0, tk.END)
+                    self.find_entry.insert(0, selection)
+                    return "break"
+            except tk.TclError:
+                pass
             self.toggle_find_bar()
             return "break"
+
+        self.text_area.bind("<Control-h>", handle_ctrl_h)
+        self.root.bind("<Control-h>", handle_ctrl_h)
+
 
         self.text_area.bind("<Control-h>", handle_ctrl_h)  # override text widget's backspace
         self.root.bind("<Control-h>", handle_ctrl_h)       # catch it at root level too
@@ -578,7 +606,6 @@ class Notepad:
         self.root.bind("<F5>", lambda e: self.insert_datetime())
         self.root.bind("<Control-p>", lambda e: self.print_file())
         self.root.bind("<Control-e>", lambda e: self.search_google())
-
 
 
 ### ================== Application Entry Point =================== ###
