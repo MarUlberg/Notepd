@@ -155,7 +155,9 @@ class Notepad:
         except Exception:
             pass
 
+
 ### ====================== UI Construction ======================= ###
+
     def create_widgets(self):
         self.text_frame = tk.Frame(self.root, bg=LIGHTGRAY_BG)
         self.text_frame.grid(row=0, column=0, sticky="nsew")
@@ -189,7 +191,9 @@ class Notepad:
         self.text_area.bind("<KeyRelease>", lambda e: self.update_cursor_position())
         self.text_area.bind("<ButtonRelease>", lambda e: self.update_cursor_position())
 
+
 ### ======================= Menu Creation ======================== ###
+
     def create_menu(self):
         menu_bar = tk.Menu(self.root, bg=LIGHTGRAY_BG, fg=DARKGRAY_BG, activebackground=BUTTON_ACTIVE, activeforeground=LIGHT_TEXT, tearoff=0)
 
@@ -226,7 +230,9 @@ class Notepad:
             self.scroll_x.grid()
         self.save_config()
 
+
 ### ================== Cursor & Status Updates =================== ###
+
     def update_cursor_position(self):
         self.root.after_idle(self._update_cursor)
 
@@ -244,19 +250,19 @@ class Notepad:
         except Exception as e:
             print("Cursor update failed:", e)
 
-
     def is_modified(self):
         current = self.text_area.get("1.0", tk.END).strip()
         return current != self.last_saved_text.strip()
 
+
 ### ====================== File Operations ======================= ###
+
     def new_file(self):
         if self.confirm_discard_changes():
             self.filename = None
             self.text_area.delete(1.0, tk.END)
             self.last_saved_text = ""
 
-### ====================== File Operations ======================= ###
     def open_file(self):
         if not self.confirm_discard_changes():
             return
@@ -269,7 +275,6 @@ class Notepad:
                 self.text_area.insert(tk.END, content)
                 self.last_saved_text = content
 
-### ====================== File Operations ======================= ###
     def save_file(self):
         if self.filename:
             content = self.text_area.get("1.0", tk.END)
@@ -279,7 +284,6 @@ class Notepad:
         else:
             self.save_file_as()
 
-### ====================== File Operations ======================= ###
     def save_file_as(self):
         path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt")])
         if path:
@@ -289,7 +293,9 @@ class Notepad:
                 file.write(content)
             self.last_saved_text = content
 
+
 ### ======================= Exit Handling ======================== ###
+
     def confirm_discard_changes(self):
         if not self.is_modified():
             return True
@@ -364,9 +370,6 @@ class Notepad:
             return True
         return False
 
-
-### ======================= Exit Handling ======================== ###
-
     def hide_and_reset(self):
         if self.confirm_discard_changes():
             self.filename = None
@@ -393,8 +396,9 @@ class Notepad:
         self.text_font.configure(size=self.font_size)
         self.save_config()
 
+
 ### ===================== Find/Replace Logic ===================== ###
-        
+  
     def toggle_find_bar(self):
         if self.find_bar and self.find_bar.winfo_exists():
             return
@@ -448,7 +452,6 @@ class Notepad:
           activebackground=BUTTON_ACTIVE).grid(row=0, column=4, sticky="ne", padx=0, pady=0)
         self.update_cursor_position()
 
-### ===================== Find/Replace Logic ===================== ###
     def do_find(self):
         self.text_area.tag_remove("found", "1.0", tk.END)
         query = self.find_entry.get()
@@ -480,7 +483,6 @@ class Notepad:
                 self.text_area.mark_set("insert", idx if backwards else end)
                 self.text_area.see(idx)
 
-### ===================== Find/Replace Logic ===================== ###
     def do_replace(self):
         if self.text_area.tag_ranges("found"):
             try:
@@ -491,8 +493,6 @@ class Notepad:
                 pass
         self.do_find()
 
-
-### ===================== Find/Replace Logic ===================== ###
     def do_replace_all(self):
         query = self.find_entry.get()
         replace = self.replace_entry.get()
@@ -506,7 +506,6 @@ class Notepad:
             new_content = re.sub(re.escape(query), replace, content, flags=re.IGNORECASE)
         self.text_area.delete("1.0", tk.END)
         self.text_area.insert("1.0", new_content)
-
 
     def insert_datetime(self):
         from datetime import datetime
@@ -538,8 +537,6 @@ class Notepad:
                 webbrowser.open(f"https://www.google.com/search?q={quote(selected)}")
         except tk.TclError:
             pass
-
-
 
     def toggle_search_direction_and_find(self):
         current = self.search_direction.get()
